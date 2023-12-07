@@ -1,0 +1,37 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<ui version="4.0">
+ <class>TCPServer</class>
+ <widget class="QWidget" name="TCPServer">
+  <property name="geometry">
+   <rect>
+    <x>0</x>
+    <y>0</y>
+    <width>283</width>
+    <height>124</height>
+   </rect>
+  </property>
+  <property name="windowTitle">
+   <string>TCPServer</string>
+  </property>
+  <widget class="QLabel" name="label">
+   <property name="geometry">
+    <rect>
+     <x>50</x>
+     <y>10</y>
+     <width>181</width>
+     <height>101</height>
+    </rect>
+   </property>
+   <property name="font">
+    <font>
+     <pointsize>20</pointsize>
+    </font>
+   </property>
+   <property name="text">
+    <string>服务器，启动！</string>
+   </property>
+  </widget>
+ </widget>
+ <resources/>
+ <connections/>
+</ui>
