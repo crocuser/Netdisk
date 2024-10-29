@@ -8,7 +8,7 @@ AllOnline::AllOnline(QWidget *parent)
     , ui(new Ui::AllOnline)
 {
     ui->setupUi(this);
-    this->setAttribute(Qt::WA_DeleteOnClose);
+    //this->setAttribute(Qt::WA_DeleteOnClose);//它作为别的类的成员不能在点了叉号后直接删。。
 }
 
 AllOnline::~AllOnline()
@@ -27,13 +27,13 @@ void AllOnline::showUser(PDU *pdu)
     // if(pdu->uiMsgType==ENUM_MSG_ALL_ONLINE_RESPOND)
     // {
     ui->all_online_list->addItem("所有在线用户如下：");
-    ui->all_online_list->addItem("666");
     for(uint i=0;i<uiSize;++i)
     {
         memcpy(caTmp,(char*)(pdu->caMsg)+i*32,32);
         ui->all_online_list->addItem(caTmp);
     }
     // }
+    this->show();
 
 }
 

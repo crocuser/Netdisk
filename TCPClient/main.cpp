@@ -6,7 +6,7 @@ int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
 
-    //完成一个功能测试一下owo哦~
+    //功能测试
     // AllOnline w;
     // w.show();
 

@@ -5,6 +5,9 @@
 #include <QSqlDatabase> //连接数据库
 #include <QSqlQuery> //查询数据库
 #include <QStringList> //字符串列表
+#include <QSqlError>
+#include <QMessageBox>
+#include <QDebug>
 
 //数据库操作类
 class OperateDB : public QObject

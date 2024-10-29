@@ -97,14 +97,13 @@ void MyTcpSocket::recvMsg()
     case ENUM_MSG_LOGIN_REQUEST://登录请求
     {
         bool res=OperateDB::getInstance().handleLogin(caName,caPwd);
-        PDU *resPdu=mkPDU(0);//这重复代码有点多啊
-        resPdu->uiMsgType=ENUM_MSG_LOGIN_RESPOND;//消息类型：注册回复
+        PDU *resPdu=mkPDU(0);
+        resPdu->uiMsgType=ENUM_MSG_LOGIN_RESPOND;//消息类型：登录回复
         if(res)
         {
             strcpy(resPdu->caData,LOGIN_OK);
             m_strName=caName;//登录成功后，记录用户名
             //在登录成功后，记录用户根目录
-
         }
         else
         {
@@ -126,7 +125,6 @@ void MyTcpSocket::recvMsg()
         {
             //每次偏移32位，char占1位，强转为char*型
             memcpy((char*)(respdu->caMsg)+i*32,nameList.at(i).toStdString().c_str(),nameList.at(i).size());
-
         }
         this->write((char*)respdu,respdu->uiPDULen);
         free(respdu);

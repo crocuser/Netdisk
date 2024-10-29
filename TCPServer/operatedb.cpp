@@ -1,7 +1,4 @@
 #include "operatedb.h"
-#include <QMessageBox>
-#include <QDebug>
-
 
 OperateDB::OperateDB(QObject *parent): QObject{parent}
 {
@@ -17,22 +14,26 @@ OperateDB &OperateDB::getInstance()
 void OperateDB::init()
 {
     m_db.setHostName("localhost");
-    m_db.setDatabaseName("F:\\Qt\\qt_project\\TCPServer\\cloud.db");
+    m_db.setDatabaseName("F:\\Qt\\Netdisk\\TCPServer\\cloud.db");//有绝对路径，不然有很多奇怪错误
     if(m_db.open())
     {
         //打开成功，查询测试一下
         QSqlQuery query;
-        // query.exec("select * from userInfo"); //执行sql查询
-        // while(query.next())//读每条数据
-        // {
-        //     QString data=QString("%1,%2,%3").arg(query.value(1).toString()).arg(query.value(2).toString()).arg(query.value(3).toString());
-        //     qDebug()<<data;
-        // }
-        qDebug()<<"打开数据库成功";
+        bool res = query.exec("update userInfo set online=0;"); //执行sql查询
+        //如何服务器异常崩溃，数据库中存在了错误数据，即用户在线状态没有更改，导致用户下次不能登录，故在打开服务器连接数据库后，进行数据库初始化
+        if(res)
+        {
+            qDebug()<<"数据库成功打开，初始化完成！";
+        }
+        else
+        {
+            qDebug()<<"数据库初始化失败！"<<query.lastError().text();
+        }
     }
     else
     {
         // QMessageBox::critical(NULL,"打开数据库","打开数据库失败！");
+        qDebug() << "Database connection failed:" << m_db.lastError().text();
         qDebug()<<"打开数据库失败！";
     }
 }
@@ -79,11 +80,7 @@ bool OperateDB::handleLogin(const char *name, const char *pwd)
     {
         QString sqlStatement=QString("update userInfo set online=1 where name=\'%1\' and pwd=\'%2\' ").arg(name).arg(pwd);
         qDebug()<<sqlStatement;
-
-        QSqlQuery query;
-        query.exec(sqlStatement);
-
-        return true;
+        return query.exec(sqlStatement);
     }
     else
     {
@@ -151,9 +148,7 @@ QStringList OperateDB::handleSearchUser(const char *name)
     for (const QString &str : resultList) {
         qDebug() << str;
     }
-
     return resultList;
-
 }
 
 int OperateDB::handleAddFriend(const char *friendName, const char *myName)

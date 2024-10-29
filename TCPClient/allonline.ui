@@ -30,21 +30,6 @@
            <string>所有在线好友：</string>
           </property>
          </item>
-         <item>
-          <property name="text">
-           <string>111</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>222</string>
-          </property>
-         </item>
-         <item>
-          <property name="text">
-           <string>333</string>
-          </property>
-         </item>
         </widget>
        </item>
       </layout>

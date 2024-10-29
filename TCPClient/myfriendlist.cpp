@@ -77,7 +77,7 @@ MyFriendList::MyFriendList(QWidget *parent)
     connect(m_pMsgSendPB,SIGNAL(clicked(bool)),this,SLOT(groupChat()));//群聊好友
 }
 
-void MyFriendList::showAllOnlineUser(PDU *pdu)
+void MyFriendList::showAllOnlineUser(PDU *pdu)//显示所有在线用户
 {
     if(NULL==pdu) return;
     m_pAllOnline->showUser(pdu);
@@ -124,7 +124,7 @@ void MyFriendList::showOnline()
 {
     if(m_pAllOnline->isHidden())
     {
-        m_pAllOnline->show();
+        //m_pAllOnline->show();
 
         //请求：显示所有在线用户
         PDU *pdu=mkPDU(0);

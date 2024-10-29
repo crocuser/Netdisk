@@ -30,13 +30,13 @@ TCPClient::~TCPClient()
     delete ui;
 }
 
-void TCPClient::loadConfig()//定义
+void TCPClient::loadConfig()//读取配置文件IP和port
 {
     QFile file(":/client.config");
     if (file.open(QIODevice::ReadOnly)) //只读打开
     {
         QByteArray baData=file.readAll();//全部读出，返回一个字节数组
-        QString strData=baData.toStdString().c_str();//字节转为字符串，给出首地址
+        QString strData=baData.toStdString().c_str();//字节转为字符串，给出首地址，转换成char*
         // qDebug() << strData; //打印
         file.close();
 
@@ -47,7 +47,6 @@ void TCPClient::loadConfig()//定义
 
         m_strIP=strList.at(0);
         m_usPort=strList.at(1).toUShort();//转成整型
-
     }
     else
     {
@@ -92,7 +91,7 @@ QString TCPClient::hashString(const QString &inputString)
 
     // 获取十六进制表示的哈希值--64位
     QByteArray hashedData = hash.result();
-    QString hashedString = hashedData.toHex().right(32);//获取后32位
+    QString hashedString = hashedData.toHex().right(31);//获取后31位，不能是32位，之后的字符串未以空字符结尾，会造成乱码
 
     return hashedString;
 }
@@ -140,7 +139,7 @@ void TCPClient::recvMsg()
         {
             m_strCurrentPath=QString("../user/%1").arg(m_strLoginName);//记录当前目录为根目录
             QMessageBox::information(this,"登录",LOGIN_OK);
-            OperateWidget::getInstance().show();
+            OperateWidget::getInstance().show();//显示操作界面
             this->hide();//隐藏登录注册注销界面
         }
         else
@@ -168,7 +167,7 @@ void TCPClient::recvMsg()
             // OperateWidget::getInstance().getFriendList()->showAllOnlineUser(pdu);//让所有在线用户那个界面去显示，这次会多了用户是否在线
             QWidget *qw=new QWidget;
             qw->setAttribute(Qt::WA_DeleteOnClose);
-            QListWidget *w=new QListWidget(nullptr);
+            QListWidget *w=new QListWidget;
             char caTmp[32];
             w->addItem("搜索结果如下；");
             for(uint i=0;i<uiSize;++i)
@@ -193,6 +192,7 @@ void TCPClient::recvMsg()
             qw->setLayout(pMain);
             qw->show();
         }
+        OperateWidget::getInstance().getFriendList()->m_strSearchName.clear();
         break;
     }
     case ENUM_MSG_ADD_FRIEND_RESPOND://添加好友的回复
@@ -388,7 +388,6 @@ void TCPClient::on_login_pb_clicked()
         pdu->uiMsgType=ENUM_MSG_LOGIN_REQUEST;
         // 都放到caData
         strPwd=hashString(strPwd);//加密
-        // qDebug()<<strPwd;
 
         strncpy(pdu->caData,strName.toStdString().c_str(),32);
         strncpy(pdu->caData+32,strPwd.toStdString().c_str(),32);

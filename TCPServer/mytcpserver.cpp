@@ -25,7 +25,7 @@ void MyTCPServer::incomingConnection(qintptr socketDescriptor)//传来一个sock
     pTcpSocket->setSocketDescriptor(socketDescriptor);//设置socket描述符
     m_tcpSocketList.append(pTcpSocket);
 
-    connect(pTcpSocket,SIGNAL(offline(MyTcpSocket*)),this,SLOT(deleteSocket(MyTcpSocket*)));
+    connect(pTcpSocket,SIGNAL(offline(MyTcpSocket*)),this,SLOT(deleteSocket(MyTcpSocket*)));//处理下线的客户端
 }
 
 void MyTCPServer::resend(const char *friendName, PDU *pdu)

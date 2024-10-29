@@ -12,7 +12,7 @@ class MyTCPServer : public QTcpServer
     Q_OBJECT
 public:
     MyTCPServer();
-    static MyTCPServer& getInstance();
+    static MyTCPServer& getInstance();//单例模式
 
     //重写父类的虚函数
     void incomingConnection(qintptr socketDescriptor);

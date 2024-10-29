@@ -19,7 +19,7 @@ public:
 
 //定义信号
 signals:
-    void offline(MyTcpSocket *mysocket);
+    void offline(MyTcpSocket *mysocket);//向tcpserver发送客户端下线消息
 
 
 //槽函数
