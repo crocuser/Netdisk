@@ -187,7 +187,7 @@ void MyTcpSocket::recvMsg()
         else if(1==res)
         {
             //在线可添加为好友，获得对方的socket转发消息
-            MyTCPServer::getInstance().resend(caName,pdu);
+            MyTCPServer::getInstance().resend(caName,pdu);//原来的请求pdu
             break;
         }
         this->write((char*)respdu,respdu->uiPDULen);
@@ -199,28 +199,36 @@ void MyTcpSocket::recvMsg()
     {
         //修改数据库
         //向发送方反馈消息
-        OperateDB::getInstance().handleAddRelationship(caName,caPwd);
-        // PDU  *respdu=mkPDU(0);
-        pdu->uiMsgType=ENUM_MSG_ADD_FRIEND_AGREE;
-        MyTCPServer::getInstance().resend(caPwd,pdu);//转发给我
+        int res = OperateDB::getInstance().handleAddRelationship(caName,caPwd);
+        //问题：如果插入失败(可能就数据库发生异常什么的)，应当修改响应信息
+        //pdu->uiMsgType=ENUM_MSG_ADD_FRIEND_AGREE;
+        if(res)
+        {
+            MyTCPServer::getInstance().resend(caPwd,pdu);//转发给我
+        }
+        else
+        {
+            pdu->uiMsgType=ENUM_MSG_ADD_FRIEND_FAIL;
+            MyTCPServer::getInstance().resend(caPwd,pdu);//转发给我
+        }
         break;
     }
     case ENUM_MSG_ADD_FRIEND_REFUSE://拒绝了添加好友的请求
     {
         //直接向发送方反馈消息
-        pdu->uiMsgType=ENUM_MSG_ADD_FRIEND_REFUSE;
+        //pdu->uiMsgType=ENUM_MSG_ADD_FRIEND_REFUSE;
         MyTCPServer::getInstance().resend(caPwd,pdu);//转发给我
         break;
     }
     case ENUM_MSG_FLUSH_FRIEND_REQUEST://刷新好友请求
     {
         QStringList friendList=OperateDB::getInstance().handldFlushFriend(caName);
-        uint uiMsgLen=friendList.size()*32;
+        uint uiMsgLen=friendList.size()*34;//每条数据中包含了用户名和用户在线状态
         PDU *respdu=mkPDU(uiMsgLen);
         respdu->uiMsgType=ENUM_MSG_FLUSH_FRIEND_RESPOND;
         for(int i=0;i<friendList.size();++i)
         {
-            memcpy((char*)(respdu->caMsg)+i*32,friendList.at(i).toStdString().c_str(),friendList.at(i).size());//拷贝
+            memcpy((char*)(respdu->caMsg)+i*34,friendList.at(i).toStdString().c_str(),friendList.at(i).size());//拷贝
         }
         this->write((char*)respdu,respdu->uiPDULen);
 
@@ -232,14 +240,14 @@ void MyTcpSocket::recvMsg()
     {
         OperateDB::getInstance().handleDeleteFriend(caName,caPwd);
 
-        //通知双方
+        //通知删除者
         PDU *respdu=mkPDU(0);
         respdu->uiMsgType=ENUM_MSG_DELETE_FRIEND_RESPOND;
         strcpy(respdu->caData,DELETE_FRIEND_OK);
         this->write((char*)respdu,respdu->uiPDULen);
-        //通知被删除者
 
-        strcpy(respdu->caData,QString("你被 %1 删除好友了呢").arg(caPwd).toStdString().c_str());
+        //通知被删除者
+        strcpy(respdu->caData,QString("你被 %1 删除好友了").arg(caPwd).toStdString().c_str());
         MyTCPServer::getInstance().resend(caName,respdu);
 
         free(respdu);

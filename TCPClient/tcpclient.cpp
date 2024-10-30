@@ -235,12 +235,20 @@ void TCPClient::recvMsg()
         QMessageBox::information(this,"添加好友",QString("%1 拒绝了你的好友请求").arg(friendName));
         break;
     }
+    case ENUM_MSG_ADD_FRIEND_FAIL:
+    {
+        char friendName[32]={'\0'};
+        strncpy(friendName,pdu->caData,32);
+        QMessageBox::information(this,"添加好友",QString("%1 同意好友请求时，发生异常，加友失败").arg(friendName));
+        break;
+    }
     case ENUM_MSG_FLUSH_FRIEND_RESPOND://刷新好友回复
     {
         OperateWidget::getInstance().getFriendList()->showUpdateFriendList(pdu);
         break;
     }
     case ENUM_MSG_DELETE_FRIEND_RESPOND://删除好友回复
+    case ENUM_MSG_DELETE_FRIEND_REQUEST://删除好友请求，都显示提示框
     {
         QMessageBox::information(this,"删除好友",pdu->caData);
         break;
@@ -428,6 +436,7 @@ void TCPClient::on_regist_pb_clicked()
     }
     else
     {
+        m_strLoginName=strName;//记录当前用户名
         PDU *pdu=mkPDU(0);//没有msg
         pdu->uiMsgType=ENUM_MSG_REGIST_REQUEST;
         // 都放到caData

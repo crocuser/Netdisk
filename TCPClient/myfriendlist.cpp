@@ -17,6 +17,7 @@ MyFriendList::MyFriendList(QWidget *parent)
     // m_pShowMsgTE->setFixedWidth(450);
     m_pFriendListWidget = new QListWidget;//显示好友列表
     m_pFriendListWidget->setFixedWidth(150);
+    m_pFriendListWidget->addItem("我的好友列表如下；");
     m_pInputMsgLE = new QLineEdit;//信息输入框
     // m_pInputMsgLE->setFixedWidth(350);
 
@@ -97,13 +98,13 @@ QListWidget *MyFriendList::getAllFriendList()
 void MyFriendList::showUpdateFriendList(PDU *pdu)//显示更新后的好友列表
 {
     if(NULL==pdu) return;
-    uint uiSize=pdu->uiMsgLen/32;
-    char caTmp[32]={'\0'};
+    uint uiSize=pdu->uiMsgLen/34;
+    char caTmp[34]={'\0'};
     m_pFriendListWidget->clear();
     m_pFriendListWidget->addItem("我的好友列表如下；");
     for(uint i=0;i<uiSize;++i)
     {
-        memcpy(caTmp,(char*)(pdu->caMsg)+i*32,32);
+        memcpy(caTmp,(char*)(pdu->caMsg)+i*34,34);
         QString str=caTmp;
         QString user=str.trimmed();//去空格
         QStringList strList = user.split(",");//逗号分割
@@ -199,6 +200,7 @@ void MyFriendList::privateChat()//私聊
     QStringList strList=m_pFriendListWidget->currentItem()->text().split("\t");
     QString strChatName=strList.at(0);
     PrivateChat::getInstance().setChatName(strChatName);//设置私聊对象和我的名字
+    PrivateChat::getInstance().setWindowTitle(strChatName+"和"+TCPClient::getInstance().getLonginName()+"(我)的私聊");
     if(PrivateChat::getInstance().isHidden())//显示私聊窗口
     {
         PrivateChat::getInstance().show();

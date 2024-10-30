@@ -179,16 +179,16 @@ int OperateDB::handleAddFriend(const char *friendName, const char *myName)
     }
 }
 
-void OperateDB::handleAddRelationship(const char *friendName, const char *myName)
+bool OperateDB::handleAddRelationship(const char *friendName, const char *myName)
 {
-    if(NULL==friendName||NULL==myName)  return;
+    if(NULL==friendName||NULL==myName)  return false;
     QString selectFridendId=QString("select id from userInfo where name=\'%1\'").arg(friendName);
     QString selectMyId=QString("select id from userInfo where name=\'%1\'").arg(myName);
     QString sqlStatement=QString("insert into friend (id,friendId) values ((%1),(%2))").arg(selectMyId).arg(selectFridendId);
     qDebug()<<sqlStatement;
 
     QSqlQuery query;
-    query.exec(sqlStatement);//执行插入
+    return query.exec(sqlStatement);//执行插入
 }
 
 QStringList OperateDB::handldFlushFriend(const char *name)//刷新好友

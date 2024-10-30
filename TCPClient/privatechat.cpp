@@ -10,8 +10,7 @@ PrivateChat::PrivateChat(QWidget *parent)
     , ui(new Ui::PrivateChat)
 {
     ui->setupUi(this);
-    this->setAttribute(Qt::WA_DeleteOnClose);
-    this->setWindowTitle(TCPClient::getInstance().getLonginName()+" 收到的私聊");
+    //this->setAttribute(Qt::WA_DeleteOnClose);
 }
 
 PrivateChat::~PrivateChat()
@@ -34,15 +33,20 @@ void PrivateChat::setChatName(QString strName)
 void PrivateChat::updateMessageList(const PDU *pdu)//更新消息列表
 {
     if(NULL==pdu) return;
-    this->update();//刷新窗口
-    this->show();//显示私聊窗口
-
     char caSendName[32]={'\0'};//发送方，即我
+    char caReceiveName[32]={'\0'};//接收方
+    memcpy(caReceiveName,pdu->caData,32);
     memcpy(caSendName,pdu->caData+32,32);
     this->setChatName(caSendName);//设置发送信息的用户
+    if(!this->windowTitle().endsWith("私聊"))
+    {
+        this->setWindowTitle(QString(caSendName)+"和"+caReceiveName+"(我)的私聊");
+    }
     QString strMessage=QString("%1 : %2").arg(caSendName).arg((char*)(pdu->caMsg));
     ui->showMessage_te->append(strMessage);
 
+    this->update();//刷新窗口
+    this->show();//显示私聊窗口
 }
 
 void PrivateChat::on_sendMessage_pb_clicked()

@@ -26,7 +26,7 @@ public:
     QStringList handleSearchUser(const char* name);
 
     int handleAddFriend(const char* friendName,const char* myName);
-    void handleAddRelationship(const char* friendName,const char* myName);
+    bool handleAddRelationship(const char* friendName,const char* myName);
     QStringList handldFlushFriend(const char* name);
     bool handleDeleteFriend(const char* friendName,const char *myName);
     QStringList handleGroupFriend(const char* name);

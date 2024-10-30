@@ -25,7 +25,6 @@ OperateWidget::OperateWidget(QWidget *parent)
     pMain->addWidget(m_pListW);
     pMain->addWidget(m_pStackedW);
 
-
     setLayout(pMain);
 
     //显示不同的窗口
