@@ -9,6 +9,7 @@
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
+#include <QLabel>
 
 #include "allonline.h"
 
@@ -36,6 +37,8 @@ public slots:
     void groupChat();
 
 private:
+    QLabel *m_pGroupChatL;//群聊标题
+    QLabel *m_pMyFriendsL;//好友列表标题
     QTextEdit *m_pShowMsgTE;//显示信息
     QListWidget *m_pFriendListWidget;//显示好友列表
     QLineEdit *m_pInputMsgLE;//信息输入框

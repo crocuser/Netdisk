@@ -312,7 +312,7 @@ void MyTcpSocket::recvMsg()
 
         PDU *respdu=mkPDU(fileInfoList.size()*128);
         respdu->uiMsgType=ENUM_MSG_FLUSH_DIR_RESPOND;//刷新目录回复
-        strcpy(respdu->caData,(char*)pdu->caMsg);
+        strcpy(respdu->caData,(char*)pdu->caMsg);//使用caData存储了当前文件夹路径
         QString message;
         int i=0;
         //单位换算：将b转换为kb
@@ -337,7 +337,6 @@ void MyTcpSocket::recvMsg()
             qDebug()<<byteArray;
             ++i;
         }
-        qDebug()<<QString((char*)(respdu->caMsg)+128*5);
         this->write((char*)respdu,respdu->uiPDULen);
         free(respdu);
         respdu=NULL;

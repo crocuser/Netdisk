@@ -16,6 +16,7 @@ NetdiskFile::NetdiskFile(QWidget *parent)
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     m_pFileInfoHeaderL = new QLabel( "文件名\t\t文件类型\t\t创建时间\t\t文件大小");//显示表头信息
+    m_pFileInfoHeaderL->setFixedHeight(10);
     m_pFileListW = new QListWidget;//显示文件列表
 
     //按钮如下
@@ -62,7 +63,7 @@ NetdiskFile::NetdiskFile(QWidget *parent)
     //关联信号槽
     connect(m_pCreateDirPB,SIGNAL(clicked(bool)),this,SLOT(createDir()));//新建目录
     connect(m_pFlushDirPB,SIGNAL(clicked(bool)),this,SLOT(flushDir()));//刷新目录
-    connect(m_pFileListW,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(enterDir()));//双击进入目录。。
+    connect(m_pFileListW,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(enterDir()));//双击进入目录
     connect(m_pReturnPB,SIGNAL(clicked(bool)),this,SLOT(returnDir()));//返回父目录
 
     connect(m_pUploadFilePB,SIGNAL(clicked(bool)),this,SLOT(uploadFile()));//上传文件
@@ -138,22 +139,14 @@ void NetdiskFile::returnDir()//按钮返回上一级目录，和进入目录类�
 {
     //首先获取当前目录
     QString strPath=TCPClient::getInstance().getCurrentPath();
-    // QStringList strDirOrderList=strPath.split("/");
-
-    // if(strDirOrderList[strDirOrderList.size()-1]==TCPClient::getInstance().getLonginName())
-    if(strPath=="./user/"+TCPClient::getInstance().getLonginName())//这样更合理
+    //判断是否已达根目录
+    if(strPath=="../user/"+TCPClient::getInstance().getLonginName())
     {
         QMessageBox::information(this,"返回","已达根目录，不能再返回！");
         return;
     }
 
-    //累加操作：[begin,end]范围，""初始值，操作（lambda表达式）
-    // QString result=std::accumulate(strDirOrderList.begin(), strDirOrderList.end()-1, QString(),
-    //                            [](const QString &a, const QString &b) {
-    //                                return a.isEmpty() ? b : a + "/" + b;
-    //                            });
-
-    int index=strPath.lastIndexOf('/');//秀儿，直接找最后一个/，然后删除后面的。
+    int index=strPath.lastIndexOf('/');//找最后一个/，然后删除后面的
     strPath.remove(index,strPath.size()-index);
 
     qDebug()<<strPath;
@@ -480,10 +473,19 @@ QString NetdiskFile::getShareFileName()
 void NetdiskFile::showDirContent(PDU *pdu)//刷新目录
 {
     if (NULL == pdu) return;
-    m_pFileListW->clear();
+    // m_pFileListW->clear();
+    QListWidgetItem *pItemTemp=NULL;
+    int row=m_pFileListW->count();
+    while(m_pFileListW->count()>0)
+    {
+        pItemTemp=m_pFileListW->item(row-1);
+        m_pFileListW->removeItemWidget(pItemTemp);
+        delete pItemTemp;
+        row=row-1;
+    }
     char strPath[64];
     strcpy(strPath,(char*)pdu->caData);
-    TCPClient::getInstance().setCurrentPath(strPath);//修改当前目录
+    TCPClient::getInstance().setCurrentPath(strPath);//更新当前目录
 
     QString title = QString(strPath) + " 目录下";
     m_pFileListW->setToolTip(title);
@@ -505,7 +507,6 @@ void NetdiskFile::showDirContent(PDU *pdu)//刷新目录
         pItem->setText(fileInfo);
         m_pFileListW->addItem(pItem);
         qDebug() << caTmp;
-        // delete pItem; // 删除QListWidgetItem对象
     }
 }
 

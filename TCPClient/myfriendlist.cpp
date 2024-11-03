@@ -13,11 +13,15 @@ MyFriendList::MyFriendList(QWidget *parent)
     this->setAttribute(Qt::WA_DeleteOnClose);
 
     m_pShowMsgTE = new QTextEdit;//显示信息
+    m_pGroupChatL = new QLabel("跟所有在线好友群聊：");
+    m_pMyFriendsL = new QLabel("我的好友列表如下；");
+    m_pGroupChatL->setFixedHeight(10);
+    m_pMyFriendsL->setFixedHeight(10);
     m_pShowMsgTE->setDocumentTitle("群发消息如下：");
     // m_pShowMsgTE->setFixedWidth(450);
     m_pFriendListWidget = new QListWidget;//显示好友列表
     m_pFriendListWidget->setFixedWidth(150);
-    m_pFriendListWidget->addItem("我的好友列表如下；");
+
     m_pInputMsgLE = new QLineEdit;//信息输入框
     // m_pInputMsgLE->setFixedWidth(350);
 
@@ -49,13 +53,18 @@ MyFriendList::MyFriendList(QWidget *parent)
 
     //垂直布局消息展示框和输入框、发送按钮
     QVBoxLayout *pLeftVBL = new QVBoxLayout;
+    pLeftVBL->addWidget(m_pGroupChatL);//提示标签
     pLeftVBL->addWidget(m_pShowMsgTE);
     pLeftVBL->addLayout(pMsgHBL);
+
+    QVBoxLayout *pMidVBL = new QVBoxLayout;
+    pMidVBL->addWidget(m_pMyFriendsL);
+    pMidVBL->addWidget(m_pFriendListWidget);
 
     //水平布局:消息展示框，好友列表，按钮垂直布局
     QHBoxLayout *pRightHBL = new QHBoxLayout;
     pRightHBL->addLayout(pLeftVBL);
-    pRightHBL->addWidget(m_pFriendListWidget);
+    pRightHBL->addLayout(pMidVBL);
     pRightHBL->addLayout(pRightPBVBL);
 
     //整体垂直布局
@@ -68,7 +77,6 @@ MyFriendList::MyFriendList(QWidget *parent)
     m_pAllOnline->hide();
 
     setLayout(pMain);
-
     //点击按钮则触发槽函数
     connect(m_pShowOnlineUserPB,SIGNAL(clicked(bool)),this,SLOT(showOnline()));//所有在线用户
     connect(m_pSearchUserPB,SIGNAL(clicked(bool)),this,SLOT(searchUser()));//搜索用户
@@ -86,7 +94,10 @@ void MyFriendList::showAllOnlineUser(PDU *pdu)//显示所有在线用户
 
 void MyFriendList::showUpateMessageList(PDU *pdu)//显示更新后的群聊界面
 {
-    m_pShowMsgTE->append((char*)(pdu->caMsg));
+    char caName[32]={'\0'};
+    strncpy(caName,pdu->caData,32);
+    QString strMsg=QString(caName)+" :  "+(char*)(pdu->caMsg);
+    m_pShowMsgTE->append(strMsg);
     m_pShowMsgTE->update();
 }
 
@@ -101,7 +112,6 @@ void MyFriendList::showUpdateFriendList(PDU *pdu)//显示更新后的好友列�
     uint uiSize=pdu->uiMsgLen/34;
     char caTmp[34]={'\0'};
     m_pFriendListWidget->clear();
-    m_pFriendListWidget->addItem("我的好友列表如下；");
     for(uint i=0;i<uiSize;++i)
     {
         memcpy(caTmp,(char*)(pdu->caMsg)+i*34,34);
@@ -192,7 +202,7 @@ void MyFriendList::deleteFriend()
 void MyFriendList::privateChat()//私聊
 {
     //指针先判空
-    if(NULL==m_pFriendListWidget->currentItem()||m_pFriendListWidget->currentItem()->text()=="我的好友列表如下；")
+    if(NULL==m_pFriendListWidget->currentItem())
     {
         QMessageBox::information(this,"私聊好友","请选择想要私聊的对象");
         return;
@@ -215,7 +225,7 @@ void MyFriendList::groupChat()//群聊
         return;
     }
     QDateTime currentDateTime = QDateTime::currentDateTime();
-    QString strMessage=QString("%1 : %2--%3").arg(TCPClient::getInstance().getLonginName()).arg(m_pInputMsgLE->text()).arg(currentDateTime.toString("yyyy-MM-dd hh:mm:ss"));
+    QString strMessage=QString("%1--%2").arg(m_pInputMsgLE->text()).arg(currentDateTime.toString("yyyy-MM-dd hh:mm:ss"));
     m_pInputMsgLE->clear();//发完清空
     QByteArray byteArray = strMessage.toUtf8();//防中文乱码
 
@@ -223,9 +233,8 @@ void MyFriendList::groupChat()//群聊
     pdu->uiMsgType=ENUM_MSG_GROUP_CHAT_REQUEST;
     QString name=TCPClient::getInstance().getLonginName();
     memcpy(pdu->caData,name.toStdString().c_str(),name.size());
-
-
     memcpy((char*)pdu->caMsg,byteArray,byteArray.size());
+
     TCPClient::getInstance().getTcpSocket().write((char*)pdu,pdu->uiPDULen);
     free(pdu);
     pdu=NULL;
