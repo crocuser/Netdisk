@@ -37,7 +37,7 @@ private:
     qint64 m_iTotal;//文件大小
     qint64 m_iRecved;//收到的数据大小
     bool m_bIsDataStream=false;//默认传输协议数据
-    QTimer *m_pTimer=new QTimer;
+    QTimer *m_pTimer;//定时器
 };
 
 #endif // MYTCPSOCKET_H

@@ -63,14 +63,14 @@ NetdiskFile::NetdiskFile(QWidget *parent)
     //关联信号槽
     connect(m_pCreateDirPB,SIGNAL(clicked(bool)),this,SLOT(createDir()));//新建目录
     connect(m_pFlushDirPB,SIGNAL(clicked(bool)),this,SLOT(flushDir()));//刷新目录
-    connect(m_pFileListW,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(enterDir()));//双击进入目录
+    //connect(m_pFileListW,SIGNAL(itemDoubleClicked(QListWidgetItem*)),this,SLOT(enterDir()));//双击进入目录
+    connect(m_pFileListW,SIGNAL(doubleClicked(QModelIndex)),this,SLOT(enterDir(QModelIndex)));
     connect(m_pReturnPB,SIGNAL(clicked(bool)),this,SLOT(returnDir()));//返回父目录
 
     connect(m_pUploadFilePB,SIGNAL(clicked(bool)),this,SLOT(uploadFile()));//上传文件
     connect(m_pTimer,&QTimer::timeout,this,&NetdiskFile::uploadFileData);//上传文件内容
     connect(m_pDownloadFilePB,&QPushButton::clicked,this,&NetdiskFile::downLoadFile);//下载文件
 
-    // connect(m_pFileListW,SIGNAL(customContextMenuRequested(QPoint)),this,SLOT(showContextMenu(QPoint)));//右键菜单
     this->m_pFileListW->setContextMenuPolicy(Qt::CustomContextMenu);//表示自定义上下文菜单策略。
     connect(m_pFileListW, &QListWidget::customContextMenuRequested, this, &NetdiskFile::showContextMenu);//右键关联自定义菜单
 
@@ -117,9 +117,10 @@ void NetdiskFile::flushDir()//刷新目录
     pdu=NULL;
 }
 
-void NetdiskFile::enterDir()//双击目录条目，进入目录，并显示其中文件
+void NetdiskFile::enterDir(const QModelIndex &index)//双击目录条目，进入目录，并显示其中文件
 {
-    QString strDirItem=m_pFileListW->currentItem()->text();
+    //QString strDirItem=m_pFileListW->currentItem()->text();
+    QString strDirItem=index.data().toString();
     QStringList strList=strDirItem.split("\t");
     if(strList[1]!="[DIR]") return;//不是目录没反应
     //是目录再向服务器请求，打开目录，获取该目录下的文件信息
@@ -228,7 +229,7 @@ void NetdiskFile::createFile()//新建文件
     PDU *pdu=mkPDU(strCurrentPath.size()+1);
 
     pdu->uiMsgType=ENUM_MSG_CREATE_FILE_REQUEST;
-    memcpy(pdu->caData,fileName.toStdString().c_str(),fileName.size());//目录名
+    memcpy(pdu->caData,fileName.toStdString().c_str(),fileName.size());//文件名
 
     memcpy((char*)pdu->caMsg,strCurrentPath.toStdString().c_str(),strCurrentPath.size());//当前路径
     TCPClient::getInstance().getTcpSocket().write((char*)pdu,pdu->uiPDULen);
@@ -236,11 +237,10 @@ void NetdiskFile::createFile()//新建文件
     pdu=NULL;
 }
 
-
 void NetdiskFile::uploadFile()//上传文件
 {
     QString strCurrentPath=TCPClient::getInstance().getCurrentPath();//当前网盘路径
-    QString strFilePath=QFileDialog::getOpenFileName();//获得上传本地文件的绝对路径
+    QString strFilePath=QFileDialog::getOpenFileName();//文件对话框：获得上传本地文件的绝对路径
     this->m_strUploadFile=strFilePath;
 
     QFile file(strFilePath);
@@ -270,15 +270,15 @@ void NetdiskFile::uploadFile()//上传文件
     free(pdu);
     pdu=NULL;
 
-    m_pTimer->start(1000);
+    m_pTimer->start(1000);//开启定时器
 
 }
 
-void NetdiskFile::uploadFileData()//上传文件内容
+void NetdiskFile::uploadFileData()//上传文件内容，点击上传文件后，设置定时器，时间到后触发上传文件内容的函数
 {
-    m_pTimer->stop();
+    m_pTimer->stop();//停止定时器
 
-    QFile file(this->m_strUploadFile);
+    QFile file(this->m_strUploadFile);//待上传的文件
 
     qDebug()<<file.fileName();
 
@@ -288,10 +288,6 @@ void NetdiskFile::uploadFileData()//上传文件内容
         QMessageBox::warning(this,"上传文件","无法打开文件，上传失败！");
         return;
     }
-    // QByteArray byteArray = file.readAll();
-
-    // qint64 res=TCPClient::getInstance().getTcpSocket().write(byteArray,byteArray.size());
-    // qDebug()<<res;//输出读到的文件内容
 
     char *pBuffer=new char[4096];
     qint64 result=0;//读取到的实际字节数
@@ -303,7 +299,7 @@ void NetdiskFile::uploadFileData()//上传文件内容
             TCPClient::getInstance().getTcpSocket().write(pBuffer,result);
             // qDebug()<<QString(pBuffer);
         }
-        else if(0==result)
+        else if(0==result)//读到文件末尾
         {
             break;
         }
@@ -315,6 +311,7 @@ void NetdiskFile::uploadFileData()//上传文件内容
     }
     file.close();//文件已经读取完毕
     delete []pBuffer;
+    pBuffer = NULL;
 }
 
 void NetdiskFile::downLoadFile()//下载文件
@@ -391,11 +388,12 @@ void NetdiskFile::pasteFile()//粘贴文件
 void NetdiskFile::showContextMenu(const QPoint &pos) //添加菜单条目
 {
     QPoint globalPos=this->m_pFileListW->mapToGlobal(pos);//从QListWidget的本地坐标pos转换为全局坐标，确保右键菜单在鼠标指针的正确位置显示
-    QListWidgetItem *selectedItem=this->m_pFileListW->itemAt(pos);//将检查右键点击的位置是否在列表视图的项目范围内，返回指向被选中项目的指针。如果指针为nullptr，则意味着右键点击不是在任何项目上，因此右键菜单不应该显示。
+    QListWidgetItem *selectedItem=this->m_pFileListW->itemAt(pos);//将检查右键点击的位置是否在列表视图的项目范围内，返回指向被选中项目的指针。如果指针为nullptr，则意味着右键点击不是在任何项目上
     qDebug() << "Custom context menu requested!";
     //右键选择listwidget条目时，弹出菜单
     if(selectedItem)
     {
+        //可以优化，在初始化时创建出右键菜单，在显示的时候，判断让哪些项可见和不可见==待实现
         QMenu *m_pMenu=new QMenu(this);
         QAction *pOpenACT=new QAction("打开",this);
         QAction *pDownloadACT=new QAction("下载",this);
@@ -422,7 +420,7 @@ void NetdiskFile::showContextMenu(const QPoint &pos) //添加菜单条目
         m_pMenu->addAction(pDeleteACT);
         m_pMenu->addAction(pCancelACT);
 
-        m_pMenu->exec(globalPos);
+        m_pMenu->exec(globalPos);//根据鼠标的位置执行一个右键菜单的弹出操作
     }
     else
     {
@@ -483,6 +481,7 @@ void NetdiskFile::showDirContent(PDU *pdu)//刷新目录
         delete pItemTemp;
         row=row-1;
     }
+    pItemTemp=NULL;
     char strPath[64];
     strcpy(strPath,(char*)pdu->caData);
     TCPClient::getInstance().setCurrentPath(strPath);//更新当前目录
@@ -520,31 +519,29 @@ bool NetdiskFile::getIsDownload()//获得状态
     return this->m_bIsDownload;
 }
 
+QString NetdiskFile::getDownloadFilePath()
+{
+    return m_strSaveFilePath;
+}
 
 void NetdiskFile::recvFileData()//接收下载文件的数据流
 {
     //保存文件，文件大小，已下载的大小
-    QFile file(this->m_strSaveFilePath);
-    if (!file.open(QIODevice::WriteOnly))//打开失败
-    {
-        QMessageBox::warning(this,"下载文件","保存文件打开失败，无法下载");
-    }
     QByteArray buffer= TCPClient::getInstance().getTcpSocket().readAll();
-    file.write(buffer,buffer.size());//写文件内容
+    m_DownloadFile.write(buffer,buffer.size());//写文件内容
     this->m_iRecved+=buffer.size();//已写文件大小
     if(this->m_iDownloadFileSize==this->m_iRecved)
     {
         //写入完成，关闭文件,重置属性
-        file.close();
+        m_DownloadFile.close();
         this->m_iDownloadFileSize=0;
         this->m_iRecved=0;
         this->m_bIsDownload=false;
         QMessageBox::information(this,"下载文件","文件下载完成！");
     }
-    if(this->m_iDownloadFileSize<this->m_iRecved)
-    // else
+    else if(this->m_iDownloadFileSize<this->m_iRecved)
     {
-        file.close();
+        m_DownloadFile.close();
         this->m_iDownloadFileSize=0;
         this->m_iRecved=0;
         this->m_bIsDownload=false;

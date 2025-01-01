@@ -10,6 +10,7 @@
 #include <QLabel>
 #include "protocol.h"
 #include <QTimer>
+#include <QFile>
 
 //右键菜单需要
 #include <QMenu>
@@ -27,9 +28,10 @@ public:
 
     void setIsDownload(bool status);//设置是否为下载文件状态
     bool getIsDownload();
+    QString getDownloadFilePath();
 
     void recvFileData();//接收下载文件的内容
-
+    QFile m_DownloadFile;
     qint64 m_iDownloadFileSize=0;//下载的文件的大小
     qint64 m_iRecved=0;//写入文件的大小
 
@@ -38,7 +40,8 @@ signals:
 public slots:
     void createDir();//新建目录
     void flushDir();//刷新目录
-    void enterDir();//进入目录
+    //void enterDir();//进入目录
+    void enterDir(const QModelIndex &index);
     void returnDir();//返回上一级目录
     void deleteFile();//删除文件或目录
     void renameFile();//重命名文件或目录

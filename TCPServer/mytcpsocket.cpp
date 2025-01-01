@@ -9,6 +9,8 @@
 
 MyTcpSocket::MyTcpSocket(QObject *parent): QTcpSocket{parent}
 {
+    //构造函数
+    m_pTimer=new QTimer;
     //各自的socket自己产生的消息，自己处理
     // connect(this,SIGNAL(readyRead()),this,SLOT(recvMsg()));
     connect(this, &QIODevice::readyRead, this, &MyTcpSocket::recvMsg);
@@ -374,6 +376,8 @@ void MyTcpSocket::recvMsg()
         this->write((char*)respdu,respdu->uiPDULen);
         free(respdu);
         respdu=NULL;
+        delete[] pPath;
+        pPath = NULL;
         break;
     }
     case ENUM_MSG_RENAME_FILE_REQUEST://重命名文件或目录请求
@@ -465,7 +469,7 @@ void MyTcpSocket::recvMsg()
             this->m_bIsDataStream=true;//接下来将传输二进制数据流
             this->m_iTotal=fileSize;
             this->m_iRecved=0;
-            this->m_File.close();//关闭文件
+            //this->m_File.close();//关闭文件
         }
 
         break;
@@ -479,14 +483,13 @@ void MyTcpSocket::recvMsg()
         qint64 fileSize=fileInfo.size();
         PDU *respdu=mkPDU(0);
         respdu->uiMsgType=ENUM_MSG_DOWNLOAD_FILE_RESPAND;//下载文件回复
-        sprintf(respdu->caData,"%s %11lld",caName,fileSize);
-
-        this->m_File.setFileName(strPath);//打开服务器端的文件
+        sprintf(respdu->caData,"%s %lld",caName,fileSize);//文件名，文件大小
 
         this->write((char*)respdu,respdu->uiPDULen);
         free(respdu);
         respdu=NULL;
 
+        this->m_File.setFileName(strPath);//打开服务器端的文件
         this->m_pTimer->start(1000);//给客户端回复后，启动计时器
 
         break;
@@ -608,50 +611,38 @@ void MyTcpSocket::recvMsg()
     pdu=NULL;
 }
 
-void MyTcpSocket::recvDataStream()//收发二进制数据流
+void MyTcpSocket::recvDataStream()//接收二进制数据流
 {
     qDebug()<<m_File.fileName();
 
-    // QByteArray buffer;
-    // qint64 res=0;
-    if(this->m_File.open(QIODevice::WriteOnly))
-    {
-        // while (true)
-        // {
-        //     res=this->read(buffer.data(),4096);
-
-        //     this->m_File.write(buffer);//全部写入
-        //     this->m_iRecved+=buffer.size();
-
-        //     buffer.clear();
-
-        //     if (res==0)
-        //         break;
-        // }
-        QByteArray buffer=this->readAll();//一直读取数据，直到设备没有更多的数据可供读取，或者发生了错误。
-        qDebug()<<buffer.data();//传过来的数据
-        this->m_File.write(buffer);//全部写入
-        this->m_iRecved+=buffer.size();
-
-        m_File.close();//关闭文件
-    }
-    PDU *respdu=mkPDU(this->m_File.fileName().size()+128);
-    respdu->uiMsgType=ENUM_MSG_UPLOAD_FILE_RESPAND;
-    this->m_bIsDataStream=false;
-
+    QByteArray buffer=this->readAll();//一直读取数据，直到设备没有更多的数据可供读取，或者发生了错误。
+    //qDebug()<<buffer.data();//传过来的数据
+    this->m_File.write(buffer);//全部写入
+    this->m_iRecved+=buffer.size();
     if(this->m_iRecved == this->m_iTotal)//上传成功
     {
+        m_File.close();//关闭文件
+        PDU *respdu=mkPDU(this->m_File.fileName().size()+128);
+        respdu->uiMsgType=ENUM_MSG_UPLOAD_FILE_RESPAND;
+        this->m_bIsDataStream=false;
         strcpy((char*)respdu->caMsg,(this->m_File.fileName()+" "+FILE_UPLOAD_OK).toUtf8().cbegin());
-
+        this->write((char*)respdu,respdu->uiPDULen);
+        free(respdu);
+        respdu=NULL;
     }
-    else//上传失败
+    else if(this->m_iRecved > this->m_iTotal)//上传失败
     {
+        m_File.close();//关闭文件
+        PDU *respdu=mkPDU(this->m_File.fileName().size()+128);
+        respdu->uiMsgType=ENUM_MSG_UPLOAD_FILE_RESPAND;
+        this->m_bIsDataStream=false;
         strcpy((char*)respdu->caMsg,(this->m_File.fileName()+" "+FILE_UPLOAD_FAILED).toUtf8().cbegin());
         this->m_File.remove();//删除创建的空文件
+        this->write((char*)respdu,respdu->uiPDULen);
+        free(respdu);
+        respdu=NULL;
     }
-    this->write((char*)respdu,respdu->uiPDULen);
-    free(respdu);
-    respdu=NULL;
+    //会有小于的情况吗
 }
 
 void MyTcpSocket::clientOffline()//处理用户下线

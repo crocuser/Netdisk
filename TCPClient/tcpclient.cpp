@@ -297,11 +297,16 @@ void TCPClient::recvMsg()
     {
         qDebug()<<pdu->caData;
         char caFileName[32]={'\0'};
-        sscanf(pdu->caData,"%s %11lld",caFileName,&(OperateWidget::getInstance().getNetdisFile()->m_iDownloadFileSize));//文件名，文件大小
+        sscanf(pdu->caData,"%s %lld",caFileName,&(OperateWidget::getInstance().getNetdisFile()->m_iDownloadFileSize));//文件名，文件大小
         if(strlen(caFileName)>0 && OperateWidget::getInstance().getNetdisFile()->m_iDownloadFileSize>0)//判断数据有效性
         {
             OperateWidget::getInstance().getNetdisFile()->setIsDownload(true);//可以接收数据流了
             qDebug()<<caFileName<<":"<<OperateWidget::getInstance().getNetdisFile()->m_iDownloadFileSize;
+            OperateWidget::getInstance().getNetdisFile()->m_DownloadFile.setFileName(OperateWidget::getInstance().getNetdisFile()->getDownloadFilePath());
+            if (!OperateWidget::getInstance().getNetdisFile()->m_DownloadFile.open(QIODevice::WriteOnly))//打开失败
+            {
+                QMessageBox::warning(this,"下载文件","保存文件打开失败，无法下载");
+            }
         }
 
         break;
